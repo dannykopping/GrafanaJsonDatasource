@@ -6,11 +6,11 @@ import React, { ComponentType } from 'react';
 import { DataSource } from './DataSource';
 import { Format } from './format';
 
-import { GenericOptions, GrafanaQuery } from './types';
+import { GenericOptions, OsqueryQuery } from './types';
 
 import './css/json-editor.css';
 
-type Props = QueryEditorProps<DataSource, GrafanaQuery, GenericOptions>;
+type Props = QueryEditorProps<DataSource, OsqueryQuery, GenericOptions>;
 
 const formatAsOptions = [
   { label: 'Time series', value: Format.Timeseries },
@@ -28,7 +28,7 @@ export const QueryEditor: ComponentType<Props> = ({ datasource, onChange, onRunQ
     find(formatAsOptions, option => option.value === query.type) ?? formatAsOptions[0]
   );
   const [metric, setMetric] = React.useState<SelectableValue<string>>();
-  const [data, setData] = React.useState(query.data ?? '');
+  const [data, setData] = React.useState(query.text ?? '');
 
   const [lastQuery, setLastQuery] = React.useState<LastQuery | null>(null);
 
@@ -99,7 +99,7 @@ export const QueryEditor: ComponentType<Props> = ({ datasource, onChange, onRunQ
       format: formatAs.value!,
     });
 
-    onChange({ ...query, data, target: metric.value, type: formatAs.value! });
+    onChange({ ...query, text: data, target: metric.value, type: formatAs.value! });
 
     onRunQuery();
   }, [data, formatAs, metric]);
@@ -134,13 +134,13 @@ export const QueryEditor: ComponentType<Props> = ({ datasource, onChange, onRunQ
       </div>
       <div className="gf-form gf-form--alt">
         <div className="gf-form-label">
-          <Label>Additional JSON Data</Label>
+          <Label>Query</Label>
         </div>
         <div className="gf-form grafana-json-datasource-editor">
           <CodeEditor
             width="100%"
             height="175px"
-            language="json"
+            language="sql"
             showLineNumbers={true}
             showMiniMap={data.length > 100}
             value={data}

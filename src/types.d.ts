@@ -10,14 +10,14 @@ declare module '@grafana/runtime' {
 
 export interface DataSourceOptions extends DataSourceJsonData {}
 
-export interface QueryRequest extends DataQueryRequest<GrafanaQuery> {
+export interface QueryRequest extends DataQueryRequest<OsqueryQuery> {
   adhocFilters?: any[];
 }
 
-export interface GrafanaQuery extends DataQuery {
+export interface OsqueryQuery extends DataQuery {
   alias?: string;
   target?: string;
-  data: string;
+  text: string;
   type: Format;
 }
 

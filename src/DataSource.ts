@@ -5,7 +5,7 @@ import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { isEqual, isObject } from 'lodash';
 import {
   GenericOptions,
-  GrafanaQuery,
+  OsqueryQuery,
   MetricFindTagKeys,
   MetricFindTagValues,
   MetricFindValue,
@@ -16,7 +16,7 @@ import {
 
 const supportedVariableTypes = ['adhoc', 'constant', 'custom', 'query', 'textbox'];
 
-export class DataSource extends DataSourceApi<GrafanaQuery, GenericOptions> {
+export class DataSource extends DataSourceApi<OsqueryQuery, GenericOptions> {
   url: string;
   withCredentials: boolean;
   headers: any;
@@ -36,18 +36,12 @@ export class DataSource extends DataSourceApi<GrafanaQuery, GenericOptions> {
   query(options: QueryRequest): Promise<DataQueryResponse> {
     const request = this.processTargets(options);
 
-    if (request.targets.length === 0) {
-      return Promise.resolve({ data: [] });
-    }
-
     // @ts-ignore
     request.adhocFilters = getTemplateSrv().getAdhocFilters(this.name);
 
-    options.scopedVars = { ...this.getVariables(), ...options.scopedVars };
-
     return this.doRequest({
       url: `${this.url}/query`,
-      data: request,
+      data: request.targets,
       method: 'POST',
     });
   }
@@ -107,9 +101,9 @@ export class DataSource extends DataSourceApi<GrafanaQuery, GenericOptions> {
   }
 
   annotationQuery(
-    options: AnnotationQueryRequest<GrafanaQuery & { query: string; iconColor: string }>
+    options: AnnotationQueryRequest<OsqueryQuery & { query: string; iconColor: string }>
   ): Promise<AnnotationEvent[]> {
-    const query = getTemplateSrv().replace(options.annotation.query, {}, 'glob');
+    const query = getTemplateSrv().replace(options.annotation.text, {}, 'glob');
 
     const annotationQuery = {
       annotation: {
@@ -160,16 +154,6 @@ export class DataSource extends DataSourceApi<GrafanaQuery, GenericOptions> {
         return target.target !== undefined;
       })
       .map(target => {
-        if (target.data.trim() !== '') {
-          target.data = JSON.parse(target.data, (key, value) => {
-            if (typeof value === 'string') {
-              return value.replace((getTemplateSrv() as any).regex, match => this.cleanMatch(match, options));
-            }
-
-            return value;
-          });
-        }
-
         if (typeof target.target === 'string') {
           target.target = getTemplateSrv().replace(target.target.toString(), options.scopedVars, 'regex');
         }
